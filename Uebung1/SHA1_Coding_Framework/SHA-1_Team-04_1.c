@@ -16,8 +16,8 @@
  * PROBLEM DESCRIPTION
  * 
  * PROGRAMMAUFRUF MIT 
- * ./crackSHA1 ec075789e0fe0a20f830a7baabc314357fbf15f0
- * ENTSPRECHENDES URBILD IST "gruppe4"
+ * ./crackSHA1 3192ca69cc3b03f7e89df6a21ba69db6b980d7a6
+ * ENTSPRECHENDES URBILD IST "gruppe"
  */
 
 int crackHash(struct state hash, char *result) {
