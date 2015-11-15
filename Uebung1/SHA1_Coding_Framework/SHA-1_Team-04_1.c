@@ -30,10 +30,10 @@ int crackHash(struct state hash, char *result) {
     const uint32_t h3 = 0x10325476;
     const uint32_t h4 = 0xC3D2E1F0;
     
-    const uint32_t k1 = 0x5A827999;
-    const uint32_t k2 = 0x6ED9EBA1;
-    const uint32_t k3 = 0x8F1BBCDC;
-    const uint32_t k4 = 0xCA62C1D6;
+    const uint32_t k0 = 0x5A827999;
+    const uint32_t k1 = 0x6ED9EBA1;
+    const uint32_t k2 = 0x8F1BBCDC;
+    const uint32_t k3 = 0xCA62C1D6;
     
     
     int i;
@@ -81,7 +81,7 @@ int crackHash(struct state hash, char *result) {
     
     for(i = 0; i < 20; i++) {
         f = d ^ (b & (c ^ d));
-        temp = ((a << 5) | (a >> 27)) + f + e + k1 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k0 + m[i];
         e = d;
         d = c;
         c = ((b << 30) | (b >> 2));
@@ -90,7 +90,7 @@ int crackHash(struct state hash, char *result) {
     }
     for(i = 20; i < 40; i++) {
         f = b ^ c ^ d;
-        temp = ((a << 5) | (a >> 27)) + f + e + k2 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k1 + m[i];
         e = d;
         d = c;
         c = ((b << 30) | (b >> 2));
@@ -99,7 +99,7 @@ int crackHash(struct state hash, char *result) {
     }
     for(i = 40; i < 60; i++) {
         f = (b & c) | (d & (b | c));
-        temp = ((a << 5) | (a >> 27)) + f + e + k3 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k2 + m[i];
         e = d;
         d = c;
         c = ((b << 30) | (b >> 2));
@@ -108,7 +108,7 @@ int crackHash(struct state hash, char *result) {
     }
     for(i = 60; i < 80; i++) {
         f = b ^ c ^ d;
-        temp = ((a << 5) | (a >> 27)) + f + e + k4 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k3 + m[i];
         e = d;
         d = c;
         c = ((b << 30) | (b >> 2));
