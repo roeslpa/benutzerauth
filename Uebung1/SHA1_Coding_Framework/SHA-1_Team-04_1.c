@@ -1,4 +1,6 @@
 #include "sha1.h"
+#include <stdio.h>
+
 
 /**
  * THIS IS A TESTBENCH FOR SHA1 PASSWORD CRACKING
@@ -67,7 +69,8 @@ int crackHash(struct state hash, char *result) {
     
     // erweitere die 16 32-Bit-Worte auf 80 32-Bit-Worte
     for(i = 16; i < 80; i++) {
-        m[i] = (m[i-3] ^ m[i-8] ^ m[i-14] ^ m[i-16]) << 1; 
+        m[i] = ((m[i-3] ^ m[i-8] ^ m[i-14] ^ m[i-16]) << 1) 
+                | ((m[i-3] ^ m[i-8] ^ m[i-14] ^ m[i-16]) >> 31); 
     }
     
     a = h0;
@@ -78,37 +81,37 @@ int crackHash(struct state hash, char *result) {
     
     for(i = 0; i < 20; i++) {
         f = d ^ (b & (c ^ d));
-        temp = (a << 5) + f + e + k1 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k1 + m[i];
         e = d;
         d = c;
-        c = (b << 30);
+        c = ((b << 30) | (b >> 2));
         b = a;
         a = temp;
     }
     for(i = 20; i < 40; i++) {
         f = b ^ c ^ d;
-        temp = (a << 5) + f + e + k2 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k2 + m[i];
         e = d;
         d = c;
-        c = (b << 30);
+        c = ((b << 30) | (b >> 2));
         b = a;
         a = temp;
     }
     for(i = 40; i < 60; i++) {
         f = (b & c) | (d & (b | c));
-        temp = (a << 5) + f + e + k3 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k3 + m[i];
         e = d;
         d = c;
-        c = (b << 30);
+        c = ((b << 30) | (b >> 2));
         b = a;
         a = temp;
     }
-    for(i = 0; i < 80; i++) {
+    for(i = 60; i < 80; i++) {
         f = b ^ c ^ d;
-        temp = (a << 5) + f + e + k4 + m[i];
+        temp = ((a << 5) | (a >> 27)) + f + e + k4 + m[i];
         e = d;
         d = c;
-        c = (b << 30);
+        c = ((b << 30) | (b >> 2));
         b = a;
         a = temp;
     }
