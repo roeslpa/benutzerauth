@@ -66,7 +66,22 @@ int crackHash(struct state hash, char *result) {
     m[13] = 0;
     m[14] = 0;
     m[15] = 48;
-    
+
+    unsigned l5,l4,l3,l2,l1,l0;
+
+    for(l5=0; l5<26; l5++) {
+        m[1] = (m[1]& ~(0xff<<16))+((l5+'a')<<16);
+        for(l4=0; l4<26; l4++) {
+            m[1] = (m[1]& ~(0xff<<24))+((l4+'a')<<24);
+            for(l3=0; l3<26; l3++) {
+                m[0] = (m[0]& ~(0xff<<0))+((l3+'a')<<0);
+                for(l2=0; l2<26; l2++) {
+                    m[0] = (m[0]& ~(0xff<<8))+((l2+'a')<<8);
+                    for(l1=0; l1<26; l1++) {
+                        m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
+                        for(l0=0; l0<26; l0++) {
+                            m[0] = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
+
     // erweitere die 16 32-Bit-Worte auf 80 32-Bit-Worte
     for(i = 16; i < 80; i++) {
         m[i] = ((m[i-3] ^ m[i-8] ^ m[i-14] ^ m[i-16]) << 1) 
@@ -118,15 +133,17 @@ int crackHash(struct state hash, char *result) {
     
     if((h0 + a) == hash.a && (h1 + b) == hash.b && (h2 + c) == hash.c 
             && (h3 + d) == hash.d && (h4 + e) == hash.e) {
-        result[0] = 'a';
-        result[1] = 'a';
-        result[2] = 'a';
-        result[3] = 'a';
-        result[4] = 'a';
-        result[5] = 'a';
+        result[0] = 'a'+l0;
+        result[1] = 'a'+l1;
+        result[2] = 'a'+l2;
+        result[3] = 'a'+l3;
+        result[4] = 'a'+l4;
+        result[5] = 'a'+l5;
         /* Found */
         return(EXIT_SUCCESS);
     }
+
+    }}}}}}
     /* Not found */
     return(EXIT_FAILURE);
 }
