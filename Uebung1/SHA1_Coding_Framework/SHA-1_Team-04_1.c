@@ -1,7 +1,7 @@
 #include "sha1.h"
 #include <stdio.h>
 
-#define ROL(m) (m << 1) | (m >> 31)
+#define ROL(m) ((m) << 1) | ((m) >> 31)
 #define ROLL(m,i) (m << i) | (m >> (32-i))
 #define F1(f,b,c,d) f = d ^ (b & (c ^ d))
 #define F2(f,b,c,d) f = b ^ c ^ d
