@@ -23,7 +23,7 @@
  * PROBLEM DESCRIPTION
  * 
  * PROGRAMMAUFRUF MIT 
- * ./crackSHA1 33207880274e07b1b72d7183fdf9b196614b5a7f
+ * ./crackSHA1 3192ca69cc3b03f7e89df6a21ba69db6b980d7a6
  * ENTSPRECHENDES URBILD IST "gruppe"
  */
 
@@ -41,31 +41,24 @@ int crackHash(struct state hash, char *result) {
     const uint32_t k3 = 0xCA62C1D6;
     
     
-    //int i;
     uint32_t a, b, c, d, e, f, temp;
     
-    /** 
-     * Vorbereitung der Nachricht:
-     * m € [a-z]^6, Initialisierung mit m = aaaaaa
-     * Länge von m muss Vielfaches von 512 Bit sein
-     * 6 Buchstaben = 48 Bit
-     * 1. Hänge '1' an -> 10000000b = 0x80
-     * 2. Hänge '0' an bis Länge = 448 Bit
-     * 3. Hänge Bitlänge der Nachricht (immer 48) als big-endian an
-     * -> m15 = 0, m16 = 48;
-     */
     uint32_t m[80],pm[80],w[25];
+    // Startwerte setzen: m=aaaaaa, Hänge '1' an -> 10000000b = 0x80, 6 Buchstaben = 48 Bit, restliche Werte sind 0
     m[0] = 0x61616161;
     m[1] = 0x61618000;
     m[15] = 48;
-    printf("%d\n", ROL(768));
+    
     unsigned l5,l4,l3,l2,l1,l0;
 
+    // Iterationen, die m[1] betreffen
     for(l5=0; l5<26; l5++) {
         m[1] = (m[1]& ~(0xff<<16))+((l5+'a')<<16);
         for(l4=0; l4<26; l4++) {
             m[1] = (m[1]& ~(0xff<<24))+((l4+'a')<<24);
 
+            // Jens Steube Message Expansion
+            // Bekannte Werte ersetzt und vorberechnet (zero based und initial step)
             m[17] = ROL(m[1]);
             m[20] = ROL(m[17]);
             m[23] = ROL(m[20] ^ 48);
@@ -119,6 +112,7 @@ int crackHash(struct state hash, char *result) {
             pm[74] = ROL(pm[71] ^ pm[66] ^ pm[60] ^ pm[58]);
             pm[75] = ROL(pm[72] ^ pm[67] ^ pm[61] ^ pm[59]);
 
+            // Iterationen, die m[0] betreffen
             for(l3=0; l3<26; l3++) {
                 m[0] = (m[0]& ~(0xff<<0))+((l3+'a')<<0);
                 for(l2=0; l2<26; l2++) {
@@ -128,6 +122,7 @@ int crackHash(struct state hash, char *result) {
                         for(l0=0; l0<26; l0++) {
                             m[0] = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
 
+    // Berechnung m[0] 1-20 mal rotiert
     w[1] = ROL(m[0]);
     w[2] = ROL(w[1]);
     w[3] = ROL(w[2]);
@@ -148,7 +143,7 @@ int crackHash(struct state hash, char *result) {
     w[18] = ROL(w[17]);
     w[19] = ROL(w[18]);
     w[20] = ROL(w[19]);
-    //6__4, 8__4, 8__12, 6__4__7
+    // Vorberechnung mehrfach verwendeter Kombinationen: 6__4, 8__4, 8__12, 6__4__7
     w[21] = w[6] ^ w[4];
     w[22] = w[8] ^ w[4];
     w[23] = w[8] ^ w[12];
@@ -201,6 +196,7 @@ int crackHash(struct state hash, char *result) {
     m[75] = pm[75] ^ w[6] ^ w[12] ^ w[14];
 
     /*
+    Unroll der Funktionen mit bekannten Werten schrittweise (zero based und initial step):
     1.
     for(i = 0; i < 20; i++) {
         f = d ^ (b & (c ^ d));
@@ -231,7 +227,7 @@ int crackHash(struct state hash, char *result) {
     d = 0x7bf36ae2;
     b = 0x9fb498b3 + m[0];
     a = ((b << 5) | (b >> 27)) + m[1] + 0x66b0cd0d;
-    // TODO: Initial step unrolling can be continued...
+    // Weitere Vorberechnungen sind nicht sinnvoll, da Rechenkomplexitaet damit nicht abnimmt (m[0] bzw m[1] sind nun in a und b und fliessen dadurch in weitere Variablen ein)
     F1(f,b,c,d);
     FF(a,b,c,d,e,f,k0,0);
     F1(f,b,c,d);
@@ -384,6 +380,7 @@ int crackHash(struct state hash, char *result) {
     F2(f,b,c,d);
     FF(a,b,c,d,e,f,k3,m[75]);
 
+    // Early Exit A-->B-(<<)->C-->D-->E
     if((h4 + ((a << 30) | (a >> 2))) == hash.e) {
         m[76] = ROL(m[73] ^ m[68] ^ m[62] ^ m[60]);
         F2(f,b,c,d);
