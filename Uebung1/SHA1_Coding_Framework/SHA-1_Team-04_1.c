@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #define ROL(m) ((m) << 1) | ((m) >> 31)
-#define ROLL(m,i) (m << i) | (m >> (32-i))
 #define F1(f,b,c,d) f = d ^ (b & (c ^ d))
 #define F2(f,b,c,d) f = b ^ c ^ d
 #define F3(f,b,c,d) f = (b & c) | (d & (b | c))
@@ -59,7 +58,7 @@ int crackHash(struct state hash, char *result) {
     m[0] = 0x61616161;
     m[1] = 0x61618000;
     m[15] = 48;
-
+    printf("%d\n", ROL(768));
     unsigned l5,l4,l3,l2,l1,l0;
 
     for(l5=0; l5<26; l5++) {
@@ -67,37 +66,29 @@ int crackHash(struct state hash, char *result) {
         for(l4=0; l4<26; l4++) {
             m[1] = (m[1]& ~(0xff<<24))+((l4+'a')<<24);
 
-            pm[16] = 0;
             m[17] = ROL(m[1]);
-            m[18] = 96;
-            pm[19] = ROL(pm[16]);
             m[20] = ROL(m[17]);
-            m[21] = 192;
-            pm[22] = ROL(pm[19]);
             m[23] = ROL(m[20] ^ 48);
-            pm[24] = ROL(192 ^ pm[16]);
-            pm[25] = ROL(pm[22] ^ m[17]);
+            pm[25] = m[20];
             m[26] = ROL(m[23] ^ 96);
-            m[27] = ROL(pm[24] ^ pm[19]);
             pm[28] = ROL(pm[25] ^ m[20]);
-            m[29] = ROL(m[26] ^ 192 ^ 48);
-            pm[30] = ROL(m[27] ^ pm[22] ^ pm[16]);
+            m[29] = ROL(m[26] ^ 240);
             pm[31] = ROL(pm[28] ^ m[23] ^ m[17] ^ 48);
-            pm[32] = ROL(m[29] ^ pm[24] ^ 96 ^ pm[16]);
-            m[33] = ROL(pm[30] ^ pm[25] ^ pm[19] ^ m[17]);
+            pm[32] = ROL(m[29] ^ 480);
+            m[33] = ROL(1536 ^ pm[25] ^ m[17]);
             pm[34] = ROL(pm[31] ^ m[26] ^ m[20] ^ 96);
-            pm[35] = ROL(pm[32] ^ m[27] ^ 192 ^ pm[19]);
-            pm[36] = ROL(m[33] ^ pm[28] ^ pm[22] ^ m[20]);
+            pm[35] = ROL(pm[32] ^ 960);
+            pm[36] = ROL(m[33] ^ pm[28] ^ m[20]);
             pm[37] = ROL(pm[34] ^ m[29] ^ m[23] ^ 192);
-            pm[38] = ROL(pm[35] ^ pm[30] ^ pm[24] ^ pm[22]);
+            pm[38] = ROL(pm[35] ^ 1920);
             m[39] = ROL(pm[36] ^ pm[31] ^ pm[25] ^ m[23]);
-            pm[40] = ROL(pm[37] ^ pm[32] ^ m[26] ^ pm[24]);
-            m[41] = ROL(pm[38] ^ m[33] ^ m[27] ^ pm[25]);
+            pm[40] = ROL(pm[37] ^ pm[32] ^ m[26] ^ 384);
+            m[41] = ROL(pm[38] ^ m[33] ^ 768 ^ pm[25]);
             pm[42] = ROL(m[39] ^ pm[34] ^ pm[28] ^ m[26]);
-            pm[43] = ROL(pm[40] ^ pm[35] ^ m[29] ^ m[27]);
-            pm[44] = ROL(m[41] ^ pm[36] ^ pm[30] ^ pm[28]);
+            pm[43] = ROL(pm[40] ^ pm[35] ^ m[29] ^ 768);
+            pm[44] = ROL(m[41] ^ pm[36] ^ 1536 ^ pm[28]);
             m[45] = ROL(pm[42] ^ pm[37] ^ pm[31] ^ m[29]);
-            pm[46] = ROL(pm[43] ^ pm[38] ^ pm[32] ^ pm[30]);
+            pm[46] = ROL(pm[43] ^ pm[38] ^ pm[32] ^ 1536);
             pm[47] = ROL(pm[44] ^ m[39] ^ m[33] ^ pm[31]);
             pm[48] = ROL(m[45] ^ pm[40] ^ pm[34] ^ pm[32]);
             pm[49] = ROL(pm[46] ^ m[41] ^ pm[35] ^ m[33]);
@@ -137,39 +128,39 @@ int crackHash(struct state hash, char *result) {
                         for(l0=0; l0<26; l0++) {
                             m[0] = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
 
-    w[1] = ROLL(m[0],1);
-    w[2] = ROLL(m[0],2);
-    w[3] = ROLL(m[0],3);
-    w[4] = ROLL(m[0],4);
-    w[5] = ROLL(m[0],5);
-    w[6] = ROLL(m[0],6);
-    w[7] = ROLL(m[0],7);
-    w[8] = ROLL(m[0],8);
-    w[9] = ROLL(m[0],9);
-    w[10] = ROLL(m[0],10);
-    w[11] = ROLL(m[0],11);
-    w[12] = ROLL(m[0],12);
-    w[13] = ROLL(m[0],13);
-    w[14] = ROLL(m[0],14);
-    w[15] = ROLL(m[0],15);
-    w[16] = ROLL(m[0],16);
-    w[17] = ROLL(m[0],17);
-    w[18] = ROLL(m[0],18);
-    w[19] = ROLL(m[0],19);
-    w[20] = ROLL(m[0],20);
+    w[1] = ROL(m[0]);
+    w[2] = ROL(w[1]);
+    w[3] = ROL(w[2]);
+    w[4] = ROL(w[3]);
+    w[5] = ROL(w[4]);
+    w[6] = ROL(w[5]);
+    w[7] = ROL(w[6]);
+    w[8] = ROL(w[7]);
+    w[9] = ROL(w[8]);
+    w[10] = ROL(w[9]);
+    w[11] = ROL(w[10]);
+    w[12] = ROL(w[11]);
+    w[13] = ROL(w[12]);
+    w[14] = ROL(w[13]);
+    w[15] = ROL(w[14]);
+    w[16] = ROL(w[15]);
+    w[17] = ROL(w[16]);
+    w[18] = ROL(w[17]);
+    w[19] = ROL(w[18]);
+    w[20] = ROL(w[19]);
     //6__4, 8__4, 8__12, 6__4__7
     w[21] = w[6] ^ w[4];
     w[22] = w[8] ^ w[4];
     w[23] = w[8] ^ w[12];
     w[24] = w[6] ^ w[4] ^ w[7];
     
-    m[16] = pm[16] ^ w[1];
-    m[19] = pm[19] ^ w[2];
-    m[22] = pm[22] ^ w[3];
-    m[24] = pm[24] ^ w[2];
+    m[16] = w[1];
+    m[19] = w[2];
+    m[22] = w[3];
+    m[24] = 384 ^ w[2];
     m[25] = pm[25] ^ w[4];
     m[28] = pm[28] ^ w[5];
-    m[30] = pm[30] ^ w[4] ^ w[2];
+    m[30] = 1536 ^ w[4] ^ w[2];
     m[31] = pm[31] ^ w[6];
     m[32] = pm[32] ^ w[3] ^ w[2];
     m[34] = pm[34] ^ w[7];
@@ -293,7 +284,7 @@ int crackHash(struct state hash, char *result) {
     F2(f,b,c,d);
     FF(a,b,c,d,e,f,k1,m[26]);
     F2(f,b,c,d);
-    FF(a,b,c,d,e,f,k1,m[27]);
+    FF(a,b,c,d,e,f,k1,768);
     F2(f,b,c,d);
     FF(a,b,c,d,e,f,k1,m[28]);
     F2(f,b,c,d);
