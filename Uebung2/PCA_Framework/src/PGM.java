@@ -1,4 +1,7 @@
+import java.io.IOException;
 import java.io.InputStream;
+
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.jblas.DoubleMatrix;
 
@@ -20,23 +23,37 @@ import org.jblas.DoubleMatrix;
 
 public class PGM {
 	
-	public final int width;
-	public final int height;
+	public int width;
+	public int height;
 	private double[] pixels;
 	private DoubleMatrix y;
 	private String path;
 	
 	
 	public PGM(InputStream in, String path) {
-		
+		byte[] stream;
+
 		/* Check Magic Bytes and read width and height, and calculate
 		 * Array Size */
-		this.width = 0;
-		this.height = 0;
-		this.pixels = new double[width * height];
-		
-		/* Create DoubleMatrix by reading from the File/InputStream */
-		y = new DoubleMatrix();
+		try {
+			PGM.readNext(in);
+			this.width = Integer.parseInt(PGM.readNext(in));
+			this.height = Integer.parseInt(PGM.readNext(in));
+			this.pixels = new double[width * height];
+			stream = new byte[width * height];
+			PGM.readNext(in);
+			
+			in.read(stream);
+			for(int i=0; i<stream.length; i++) {
+				pixels[i] = (0xFF & stream[i]);
+			}
+			
+			/* Create DoubleMatrix by reading from the File/InputStream */
+			y = new DoubleMatrix(pixels);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		/* Save path for later */
 		this.path = path;
@@ -65,5 +82,16 @@ public class PGM {
 	
 	private static boolean isWhiteSpace(int c) {
 		return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+	}
+	
+	private static String readNext(InputStream in) throws IOException {
+		byte[] b = new byte[1];
+		String text = new String("");
+		in.read(b);
+		while(!isWhiteSpace(b[0])) {
+			text = text.concat(new String(b));
+			in.read(b);
+		}
+		return text;
 	}
 }
