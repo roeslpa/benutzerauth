@@ -1,10 +1,13 @@
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jblas.ComplexDoubleMatrix;
 import org.jblas.DoubleMatrix;
 import org.jblas.Eigen;
+import org.jblas.ranges.RangeUtils;
 
 /**
  * THIS IS A TESTBENCH FOR PCA FACE RECOGNITION
@@ -26,15 +29,75 @@ import org.jblas.Eigen;
 
 public class PCA {
 	
-	private List<File> set;
+	private List<File> fileSet;
+	//private List<PGM> set;
+	private List<DoubleMatrix> set;
 	private List<File> resultFile;
 	private List<Double> resultDistance;
 	
-	public PCA(List<File> set) {
+	private DoubleMatrix averageWeight;
+	private DoubleMatrix X;
+	private DoubleMatrix XT;
+	private DoubleMatrix C;
+	private DoubleMatrix F;
+	private DoubleMatrix E;
+	private DoubleMatrix Et;
+	private DoubleMatrix EtT;
+	private DoubleMatrix ET;
+	private List<DoubleMatrix> Y;
+	
+	//public PCA(List<File> fileSet) {
+	public PCA(List<DoubleMatrix> set) {
+		/*set = new ArrayList<PGM>();
+		try {
+			for(int i=0; i<fileSet.size(); i++) {
+				set.add(new PGM(new FileInputStream(fileSet.get(i)) , fileSet.get(i).getPath()));
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}*/
 		this.set = set;
 		
 		this.resultFile = new ArrayList<File>(3);
 		this.resultDistance = new ArrayList<Double>(3);
+		
+		this.averageWeight = new DoubleMatrix();		
+		this.Y = new ArrayList<DoubleMatrix>();
+		
+		//Calculate average
+		averageWeight = set.get(0);
+		for(int i=1; i<set.size(); i++) {
+			averageWeight = averageWeight.add(set.get(i));
+		}
+		averageWeight = averageWeight.muli(1.0/set.size());
+		
+		//Subtract average from all pictures
+		X = set.get(0).sub(averageWeight);
+		for(int i=1; i<set.size(); i++) {
+			X = DoubleMatrix.concatHorizontally(X, set.get(i).sub(averageWeight));
+		}
+		XT = X.transpose();
+		
+		C = X.mmul(XT);
+		E = Eigen.eigenvectors(C)[0].getReal();
+		//E = X.mmul(F);
+		//Et = E.getColumns(RangeUtils.interval(6, 305));
+		//EtT = E.transpose();
+		ET = E.transpose();
+		
+		for(int i=0; i<set.size(); i++) {
+			Y.add(ET.mmul(set.get(i)));
+		}
+		
+		// Debug
+		averageWeight.print();
+		X.print();
+		XT.print();
+		C.print();
+		E.print();
+		ET.print();
+		Y.get(0).print();
+		Y.get(1).print();
 		
 	}
 	
@@ -73,24 +136,63 @@ public class PCA {
 	 * @param toTest The image that has to be compared to the set of files
 	 * 
 	 */
-	public void doPCA(File toTest) {
+	//public void doPCA(File toTestFile) {
+	public void doPCA(DoubleMatrix toTest) {
+		//PGM toTest;
+		DoubleMatrix yAst;
+		Double yDistI, yDist0, yDist1, yDist2;
+		int first, second, third;
 		
+		//toTest = null;
 		
-		/* DELETE THIS AND FILL IN YOUR OWN CODE */
-		/* ------------------------------------- */
+		/*try {
+			toTest = new PGM(new FileInputStream(toTestFile) , toTestFile.getPath());
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}*/
 		
-		//This is how you add files to the result
-		addFileResult(0, toTest);
-		addFileResult(1, toTest);
-		addFileResult(2, toTest);
+		yDist0 = Double.MAX_VALUE;
+		yDist1 = Double.MAX_VALUE;
+		yDist2 = Double.MAX_VALUE;
+		first = Integer.MAX_VALUE;
+		second = Integer.MAX_VALUE;
+		third = Integer.MAX_VALUE;
+		
+		//yAst = EtT.mmul(toTest.getMatrix());
+		yAst = ET.mmul(toTest);
+		
+		for(int i = 0; i<Y.size(); i++) {
+			yDistI = yAst.distance2(Y.get(i));
+			
+			if(yDistI.compareTo(yDist0) < 0) {
+				yDist2 = yDist1;
+				yDist1 = yDist0;
+				yDist0 = yDistI;
+				third = second;
+				second = first;
+				first = i;
+			} else if(yDistI.compareTo(yDist1) < 0) {
+				yDist2 = yDist1;
+				yDist1 = yDistI;
+				third = second;
+				second = i;
+			} else if(yDistI.compareTo(yDist2) < 0) {
+				yDist2 = yDistI;
+				third = i;
+			}
+		}
+		set.get(first).print();
+		set.get(second).print();
+		
+		/*This is how you add files to the result
+		addFileResult(0, new File(set.get(first).getPath()));
+		addFileResult(1, new File(set.get(second).getPath()));
+		addFileResult(2, new File(set.get(third).getPath()));
 		
 		//This is how you add the corresponding probs to the result
-		addDistResult(0, 100.0);
-		addDistResult(1, 90.0);
-		addDistResult(2, 80.0);
-		
-		/* ------------------------------------- */
-		/* DELETE THIS AND FILL IN YOUR OWN CODE */
+		addDistResult(0, yDist0);
+		addDistResult(1, yDist1);
+		addDistResult(2, yDist2);*/
 		
 		return;
 	}
