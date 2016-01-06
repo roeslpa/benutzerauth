@@ -36,6 +36,7 @@ public class PGM {
 		/* Check Magic Bytes and read width and height, and calculate
 		 * Array Size */
 		try {
+			//Read the standard values
 			PGM.readNext(in);
 			this.width = Integer.parseInt(PGM.readNext(in));
 			this.height = Integer.parseInt(PGM.readNext(in));
@@ -43,6 +44,7 @@ public class PGM {
 			stream = new byte[width * height];
 			PGM.readNext(in);
 			
+			//Read the pixel values; & 0xFF because else 8 Bit integers become negative (129 => -127) but we need positive numbers
 			in.read(stream);
 			for(int i=0; i<stream.length; i++) {
 				pixels[i] = (0xFF & stream[i]);
@@ -88,6 +90,8 @@ public class PGM {
 		byte[] b = new byte[1];
 		String text = new String("");
 		in.read(b);
+		
+		//Get the next string until whitespace (for first values)
 		while(!isWhiteSpace(b[0])) {
 			text = text.concat(new String(b));
 			in.read(b);

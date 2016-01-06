@@ -48,6 +48,8 @@ public class PCA {
 	
 	public PCA(List<File> fileSet) {
 		set = new ArrayList<PGM>();
+		
+		//Read files
 		try {
 			for(int i=0; i<fileSet.size(); i++) {
 				set.add(new PGM(new FileInputStream(fileSet.get(i)) , fileSet.get(i).getPath()));
@@ -76,27 +78,24 @@ public class PCA {
 		}
 		XT = X.transpose();
 		
+		//Calculate smaller covariance matrix
 		C = XT.mmul(X);
+		
+		//Calculate eigenvectors of smaller covariance matrix
 		F = Eigen.eigenvectors(C)[0].getReal();
+		
+		//Calculate eigenvectors of covariance matrix
 		E = X.mmul(F);
+		
+		//Take only vectors into account which are not the "standard face"
 		Et = E.getColumns(RangeUtils.interval(6, 305));
 		EtT = E.transpose();
 		//ET = E.transpose();
 		
+		//Calculate all y
 		for(int i=0; i<set.size(); i++) {
 			Y.add(EtT.mmul(set.get(i).getMatrix()));
 		}
-		
-		/* Debug
-		averageWeight.print();
-		X.print();
-		XT.print();
-		C.print();
-		E.print();
-		ET.print();
-		Y.get(0).print();
-		Y.get(1).print();
-		*/
 	}
 	
 	public List<File> getResultFiles() {
@@ -135,7 +134,6 @@ public class PCA {
 	 * 
 	 */
 	public void doPCA(File toTestFile) {
-	//public void doPCA(DoubleMatrix toTest) {
 		PGM toTest;
 		DoubleMatrix yAst;
 		Double yDistI, yDist0, yDist1, yDist2;
@@ -143,6 +141,7 @@ public class PCA {
 		
 		toTest = null;
 		
+		//Read file
 		try {
 			toTest = new PGM(new FileInputStream(toTestFile) , toTestFile.getPath());
 		} catch (FileNotFoundException e) {
@@ -156,8 +155,10 @@ public class PCA {
 		second = Integer.MAX_VALUE;
 		third = Integer.MAX_VALUE;
 		
+		//Calculate y of test picture 
 		yAst = EtT.mmul(toTest.getMatrix());
 		
+		//Compute distances and find the three smallest
 		for(int i = 0; i<Y.size(); i++) {
 			yDistI = yAst.distance2(Y.get(i));
 			
@@ -179,12 +180,10 @@ public class PCA {
 			}
 		}
 		
-		//This is how you add files to the result
 		addFileResult(0, new File(set.get(first).getPath()));
 		addFileResult(1, new File(set.get(second).getPath()));
 		addFileResult(2, new File(set.get(third).getPath()));
 		
-		//This is how you add the corresponding probs to the result
 		addDistResult(0, yDist0);
 		addDistResult(1, yDist1);
 		addDistResult(2, yDist2);
