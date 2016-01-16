@@ -31,13 +31,17 @@
 #include <dirent.h>
 #include <string.h>
 
-#define MAX_MINUTIAE    130			/* should be ajusted if a file has more minutiae */
+#define MAX_MINUTIAE    140			/* should be ajusted if a file has more minutiae */
 #define A_X		400			/* used for Array in alignment, should be */
 #define A_Y		500			/* adjusted if out of boundaries error occurs*/
 #define threshold_d 	14			/* for getScore */
 #define threshold_r 	18			/* for getScore */
 #define thres_t		18			/* for alignment */
 #define PI 		3.14159 
+// Beim Einlesen der xyt-Dateine: 
+// Max 16 Zeichen pro Zeile: 3x dreistellig, 1x zweistellig, 3x Leerzeichen, \n und \0
+#define ZEILENLAENGE    16 
+int n = 1;
 
 struct xyt_struct {
 	int nrows;
@@ -277,6 +281,34 @@ int getScore(struct  xyt_struct probe,struct xyt_struct galleryimage){
  */
 struct xyt_struct loadMinutiae(const char *xyt_file){
 	struct xyt_struct res;
-
+        FILE *datei;
+        char puffer[ZEILENLAENGE];
+        char *xTemp, *yTemp, *angleTemp, *qualityTemp, *fifthTemp;
+        res.nrows = 0;
+        if( (datei=fopen(xyt_file, "r")) == NULL) {
+            fprintf(stderr, "Kann %s nicht oeffnen\n", xyt_file);
+            exit(EXIT_FAILURE);
+        }
+        while(fgets(puffer, ZEILENLAENGE, datei)) {
+            xTemp = strtok(puffer, " ");
+            yTemp = strtok(NULL, " ");
+            angleTemp = strtok(NULL, " ");
+            qualityTemp = strtok(NULL, " ");
+            fifthTemp = strtok(NULL, " ");
+            //Checke, ob Zeile heile, d.h. genau 4 Werte in einer Zeile
+            //Wenn es weniger als 3 Werte gibt, entspricht qualityTemp "\n". 
+            //Wenn es mehr als 4 Werte gibt, ist fifthTemp != NULL
+            if(strcmp(angleTemp, "\n") == 0 || fifthTemp != NULL) {
+                printf("Spalte %d in Datei %s ist fehlerhaft! Programm wird beendet.\n", res.nrows, xyt_file);       
+                exit(EXIT_FAILURE);
+            } 
+            res.xcol[res.nrows] = atoi(xTemp);
+            res.ycol[res.nrows] = atoi(yTemp);
+            res.thetacol[res.nrows] = atoi(angleTemp);
+            res.nrows++;
+            if(res.nrows == MAX_MINUTIAE) {
+                return res;
+            }
+        }
 	return res;
 }
