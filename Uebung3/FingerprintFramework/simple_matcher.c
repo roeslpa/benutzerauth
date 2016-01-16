@@ -3,10 +3,10 @@
  * The -h flag can be used to toggle the use of the Hough-Transformation
  * The -p flag is used to determine a probe image in the xyt format
  * The -g flag is used to determine the gallery, either a single image
- * 		or a complete directory with .xyt files
+ * 	or a complete directory with .xyt files
  * The -s flag can be used to test either a single file (when set) in this
- * 		case the -g flag is the path of a single .xyt file, or (when not set)
- 		a whole directory. In this case the -g flag is the path to the dir. 
+ * 	case the -g flag is the path of a single .xyt file, or (when not set)
+ *      a whole directory. In this case the -g flag is the path to the dir. 
  * 
  * ************ ASSIGNMENT ***************
  * Implement the functions loadMinutiae, getScore and alignment.
@@ -32,12 +32,12 @@
 #include <string.h>
 
 #define MAX_MINUTIAE    130			/* should be ajusted if a file has more minutiae */
-#define A_X				400			/* used for Array in alignment, should be */
-#define A_Y				500			/* adjusted if out of boundaries error occurs*/
+#define A_X		400			/* used for Array in alignment, should be */
+#define A_Y		500			/* adjusted if out of boundaries error occurs*/
 #define threshold_d 	14			/* for getScore */
 #define threshold_r 	18			/* for getScore */
-#define thres_t			18			/* for alignment */
-#define PI 				3.14159 
+#define thres_t		18			/* for alignment */
+#define PI 		3.14159 
 
 struct xyt_struct {
 	int nrows;
