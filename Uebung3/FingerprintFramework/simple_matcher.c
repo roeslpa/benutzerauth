@@ -31,7 +31,7 @@
 #include <dirent.h>
 #include <string.h>
 
-#define MAX_MINUTIAE    140			/* should be ajusted if a file has more minutiae */
+#define MAX_MINUTIAE    130			/* should be ajusted if a file has more minutiae */
 #define A_X		400			/* used for Array in alignment, should be */
 #define A_Y		500			/* adjusted if out of boundaries error occurs*/
 #define threshold_d 	14			/* for getScore */
@@ -41,6 +41,8 @@
 // Beim Einlesen der xyt-Dateine: 
 // Max 16 Zeichen pro Zeile: 3x dreistellig, 1x zweistellig, 3x Leerzeichen, \n und \0
 #define ZEILENLAENGE    16 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
 int n = 1;
 
 struct xyt_struct {
@@ -250,7 +252,7 @@ void test_multiple(char* probename, char* dirname, int hflag) {
  * The probe image, is the image you want to align, the gallery image to. 
  * Return the aligned gallery xyt_struct as the result of this function.
  */
-struct  xyt_struct alignment(struct  xyt_struct probe,struct xyt_struct galleryimage){
+struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct galleryimage){
 
 	return galleryimage;
 }
@@ -262,9 +264,32 @@ struct  xyt_struct alignment(struct  xyt_struct probe,struct xyt_struct galleryi
  * Compare the gallery image to the probe image and return
  * the comparison score as an integer. 
  */
-int getScore(struct  xyt_struct probe,struct xyt_struct galleryimage){
-	int score=0;
-
+int getScore(struct  xyt_struct probe, struct xyt_struct galleryimage){
+	int score, usedProbe[probe.nrows], usedGalleryImage[galleryimage.nrows];
+        double spatialDistanceX, spatialDistanceY, spatialDistance, directionDifference;
+        int i, j;
+        
+        score = 0;
+        memset(usedProbe, 0, probe.nrows*sizeof(int));
+        memset(usedGalleryImage, 0, galleryimage.nrows*sizeof(int));
+        
+        for(i = 0; i < probe.nrows; i++) {
+            for(j = 0; j < galleryimage.nrows; j++) {
+                spatialDistanceX = pow((probe.xcol[i] - galleryimage.xcol[j]), 2);
+                spatialDistanceY = pow((probe.ycol[i] - galleryimage.ycol[j]), 2);
+                spatialDistance = sqrt(spatialDistanceX + spatialDistanceY);
+                
+                directionDifference = MIN(fabs(galleryimage.thetacol - probe.thetacol), 
+                        360 - fabs(galleryimage.thetacol - probe.thetacol));
+                
+                if(spatialDistance <= threshold_d && directionDifference <= threshold_r
+                        && usedGalleryImage[j] == 0 && usedProbe[i] == 0  ) {
+                    usedGalleryImage[j] = 1;
+                    usedProbe[i] = 1;
+                    score++;
+                }
+            }
+        }
 	return score;
 }
 
@@ -285,6 +310,7 @@ struct xyt_struct loadMinutiae(const char *xyt_file){
         char puffer[ZEILENLAENGE];
         char *xTemp, *yTemp, *angleTemp, *qualityTemp, *fifthTemp;
         res.nrows = 0;
+        
         if( (datei=fopen(xyt_file, "r")) == NULL) {
             fprintf(stderr, "Kann %s nicht oeffnen\n", xyt_file);
             exit(EXIT_FAILURE);
@@ -295,13 +321,14 @@ struct xyt_struct loadMinutiae(const char *xyt_file){
             angleTemp = strtok(NULL, " ");
             qualityTemp = strtok(NULL, " ");
             fifthTemp = strtok(NULL, " ");
-            //Checke, ob Zeile heile, d.h. genau 4 Werte in einer Zeile
+            //Checke, ob Zeile heile:
             //Wenn es weniger als 3 Werte gibt, entspricht qualityTemp "\n". 
             //Wenn es mehr als 4 Werte gibt, ist fifthTemp != NULL
             if(strcmp(angleTemp, "\n") == 0 || fifthTemp != NULL) {
                 printf("Spalte %d in Datei %s ist fehlerhaft! Programm wird beendet.\n", res.nrows, xyt_file);       
                 exit(EXIT_FAILURE);
             } 
+            // Char-Werte in int konvertieren und in die Struktur schreiben
             res.xcol[res.nrows] = atoi(xTemp);
             res.ycol[res.nrows] = atoi(yTemp);
             res.thetacol[res.nrows] = atoi(angleTemp);
