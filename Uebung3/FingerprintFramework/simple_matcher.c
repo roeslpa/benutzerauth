@@ -32,8 +32,8 @@
 #include <string.h>
 
 #define MAX_MINUTIAE    130			/* should be ajusted if a file has more minutiae */
-#define A_X		1400			/* used for Array in alignment, should be */
-#define A_Y		1500			/* adjusted if out of boundaries error occurs*/
+#define A_X		400			/* used for Array in alignment, should be */
+#define A_Y		500			/* adjusted if out of boundaries error occurs*/
 #define threshold_d 	14			/* for getScore */
 #define threshold_r 	18			/* for getScore */
 #define thres_t		18			/* for alignment */
@@ -254,15 +254,11 @@ void test_multiple(char* probename, char* dirname, int hflag) {
  * Return the aligned gallery xyt_struct as the result of this function.
  */
 struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct galleryimage){
-        int deltaT, deltaX, deltaY, a[A_X][A_Y][thres_t], i, j, k, maximum, maxX, maxY, maxT;
+        int deltaT, deltaX, deltaY, i, j;
+        int arrayX, arrayY, arrayT, maximum, maxX, maxY, maxT;
+        static int a[A_X][A_Y][thres_t]; //static automatisch mit 0 initialisiert
         
         maximum = maxX = maxY = maxT = 0;
-        for(i = 0; i < probe.nrows; i++) {
-            for(j = 0; j < galleryimage.nrows; j++) {
-                for(k = 0; k < thres_t; k++)
-                    a[i][j][k] = 0;
-            }
-        }
         
         for(i = 0; i < probe.nrows; i++) {
             for(j = 0; j < galleryimage.nrows; j++) {
@@ -270,17 +266,20 @@ struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct gallery
                 deltaX = floor(probe.xcol[i] - (galleryimage.xcol[j] * cos(deltaT)) - (galleryimage.ycol[j] * sin(deltaT)));
                 deltaY = floor(probe.ycol[i] - (galleryimage.ycol[j] * cos(deltaT)) + (galleryimage.xcol[j] * sin(deltaT)));
                 // Offest +9 fuer deltaT. deltaT bei Auswertung [-7, 4]
-                // Offset +550 fuer deltaX. deltaX bei Auswertung [-502, 824]
-                // Offset +500 fuer deltaX. deltaX bei Auswertung [-464, 950]
-                a[deltaX+550][deltaY+500][deltaT+9]++;
-                if(a[deltaX+550][deltaY+500][deltaT+9] > maximum) {
+                // Offset + fuer deltaX. deltaX bei Auswertung [-502, 824]
+                // Offset + fuer deltaX. deltaX bei Auswertung [-464, 950]
+                arrayX = floor(deltaX/10 + 200);
+                arrayY = floor(deltaY/10 + 200);
+                arrayT = floor(deltaT + 9);
+                a[arrayX][arrayY][arrayT]++;
+                if(a[arrayX][arrayY][arrayT] > maximum) {
+                    maximum = a[arrayX][arrayY][arrayT];
                     maxX = deltaX;
                     maxY = deltaY;
                     maxT = deltaT;
                 }
             }
         }
-        
         for(j = 0; j < galleryimage.nrows; j++) {
             galleryimage.xcol[j] += deltaX;
             galleryimage.ycol[j] += deltaY;
