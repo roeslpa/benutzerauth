@@ -273,10 +273,10 @@ struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct gallery
                 deltaT = (int)floor(probe.thetacol[j] - galleryimage.thetacol[i]);
                 deltaX = (int)floor(probe.xcol[j] - (galleryimage.xcol[i] * cos(getRad(deltaT))) - (galleryimage.ycol[i] * sin(getRad(deltaT))));
                 deltaY = (int)floor(probe.ycol[j] - (galleryimage.ycol[i] * cos(getRad(deltaT))) + (galleryimage.xcol[i] * sin(getRad(deltaT))));
-                // a maximal 400 Eintraege fuer x. deltaX bei Auswertung [-495, 807]
-                // -> 1302 Eintraege theoretisch notwendig -> teilen durch 4 (binning) 
+                // a maximal 400 Eintraege fuer x. deltaX bei Auswertung [-457, 825]
+                // -> 1282 Eintraege theoretisch notwendig -> teilen durch 4 (binning) 
                 // Offset +150, um keine negativen Indizes zu erhalten
-                // Analog für deltaY [-481, 965] und getRad(deltaT) [-7, 6]
+                // Analog für deltaY [-492, 988] und getRad(deltaT) [-7, 6]
                 arrayX = (int)floor(deltaX/4) + 150;
                 arrayY = (int)floor(deltaY/3) + 170;
                 arrayT = (int)floor(getRad(deltaT)) + 9;
@@ -289,10 +289,10 @@ struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct gallery
                 }
             }
         }
-        for(j = 0; j < galleryimage.nrows; j++) {
-            galleryimage.xcol[j] += deltaX;
-            galleryimage.ycol[j] += deltaY;
-            galleryimage.thetacol[j] += deltaT;
+        for(i = 0; i < galleryimage.nrows; i++) {
+            galleryimage.xcol[i] += maxX;
+            galleryimage.ycol[i] += maxY;
+            galleryimage.thetacol[i] += maxT;
         }
         
 	return galleryimage;
