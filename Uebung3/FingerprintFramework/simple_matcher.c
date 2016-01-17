@@ -256,8 +256,8 @@ void test_multiple(char* probename, char* dirname, int hflag) {
  * Return the aligned gallery xyt_struct as the result of this function.
  */
 struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct galleryimage){
-        int deltaT, deltaX, deltaY, i, j, k;
-        int arrayX, arrayY, arrayT, maximum, maxX, maxY, maxT;
+        int deltaT, deltaX, deltaY, arrayX, arrayY, arrayT, maximum, maxX, maxY, maxT;
+        int i, j ,k;
         
         maximum = maxX = maxY = maxT = 0;
         for(i = 0; i < A_X; i++) {
@@ -268,11 +268,11 @@ struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct gallery
             }
         }
         
-        for(i = 0; i < probe.nrows; i++) {
-            for(j = 0; j < galleryimage.nrows; j++) {
-                deltaT = (int)floor(galleryimage.thetacol[j] - probe.thetacol[i]);
-                deltaX = (int)floor(galleryimage.xcol[j] - (probe.xcol[i] * cos(getRad(deltaT))) - (probe.ycol[i] * sin(getRad(deltaT))));
-                deltaY = (int)floor(galleryimage.ycol[j] - (probe.ycol[i] * cos(getRad(deltaT))) + (probe.xcol[i] * sin(getRad(deltaT))));
+        for(i = 0; i < galleryimage.nrows; i++) {
+            for(j = 0; j < probe.nrows; j++) {
+                deltaT = (int)floor(probe.thetacol[j] - galleryimage.thetacol[i]);
+                deltaX = (int)floor(probe.xcol[j] - (galleryimage.xcol[i] * cos(getRad(deltaT))) - (galleryimage.ycol[i] * sin(getRad(deltaT))));
+                deltaY = (int)floor(probe.ycol[j] - (galleryimage.ycol[i] * cos(getRad(deltaT))) + (galleryimage.xcol[i] * sin(getRad(deltaT))));
                 // a maximal 400 Eintraege fuer x. deltaX bei Auswertung [-495, 807]
                 // -> 1302 Eintraege theoretisch notwendig -> teilen durch 4 (binning) 
                 // Offset +150, um keine negativen Indizes zu erhalten
@@ -313,8 +313,12 @@ int getScore(struct  xyt_struct probe, struct xyt_struct galleryimage){
         int i, j;
         
         score = 0;
-        memset(usedProbe, 0, probe.nrows*sizeof(int));
-        memset(usedGalleryImage, 0, galleryimage.nrows*sizeof(int));
+        for(i = 0; i < probe.nrows; i++) {
+            usedProbe[i] = 0;
+        }
+        for(i = 0; i < probe.nrows; i++) {
+            usedGalleryImage[i] = 0;
+        }
         
         for(i = 0; i < probe.nrows; i++) {
             for(j = 0; j < galleryimage.nrows; j++) {
@@ -322,8 +326,8 @@ int getScore(struct  xyt_struct probe, struct xyt_struct galleryimage){
                 spatialDistanceY = pow((galleryimage.ycol[j] - probe.ycol[i]), 2);
                 spatialDistance = sqrt(spatialDistanceX + spatialDistanceY);
                 
-                directionDifference = MIN(fabs(galleryimage.thetacol - probe.thetacol), 
-                        360 - fabs(galleryimage.thetacol - probe.thetacol));
+                directionDifference = MIN(fabs(galleryimage.thetacol[j] - probe.thetacol[i]), 
+                        360 - fabs(galleryimage.thetacol[j] - probe.thetacol[i]));
                 
                 if(spatialDistance <= threshold_d && directionDifference <= threshold_r
                         && usedGalleryImage[j] == 0 && usedProbe[i] == 0  ) {
