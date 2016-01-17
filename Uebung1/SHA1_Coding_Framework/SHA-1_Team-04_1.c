@@ -1,11 +1,27 @@
 #include "sha1.h"
 #include <stdio.h>
+#include <emmintrin.h>  
 
 #define ROL(m) ((m) << 1) | ((m) >> 31)
 #define F1(f,b,c,d) f = d ^ (b & (c ^ d))
 #define F2(f,b,c,d) f = b ^ c ^ d
 #define F3(f,b,c,d) f = (b & c) | (d & (b | c))
 #define FF(a,b,c,d,e,f,k,m) temp = ((a << 5) | (a >> 27)) + f + e + k + m; e = d; d = c; c = ((b << 30) | (b >> 2)); b = a; a = temp;
+// SIMD Makros
+#define OR(x,y) (_mm_or_si128(x,y))
+#define XOR(x,y) (_mm_xor_si128(x,y))
+#define AND(x,y) (_mm_and_si128(x,y))
+#define ADD(x,y) (_mm_add_epi32(x,y))
+#define SIMDROLX(m, x) OR(_mm_sll_epi32(m, x), _mm_srl_epi32(m, 32-x))
+#define SIMDROL(m) SIMDROLX(m, 1)
+#define SIMDF1(f,b,c,d) f = XOR(d, AND(b, XOR(c,d)))
+#define SIMDF2(f,b,c,d) f = XOR(b, XOR(c,d))
+#define SIMDF3(f,b,c,d) f = OR(AND(b,c), AND(d, OR(b,c)))
+#define SIMDFF(a,b,c,d,e,f,k,m) temp = ADD(ADD(ADD(ADD(SIMDROLX(a, 5), f), e), k), m); e = d; d = c; c = SIMDROLX(b, 30); b = a; a = temp;
+// Returns a 128bit vector: va1|va1|va1|va1
+#define SET1INT(va1) (_mm_set1_epi32(va1))
+// Returns a 128bit vector: va1|va2|va3|va4
+#define SET4INT(va1, va2, va3, va4) (_mm_set_epi32(va1, va2, va3, va4))
 
 /**
  * THIS IS A TESTBENCH FOR SHA1 PASSWORD CRACKING
@@ -17,7 +33,7 @@
  * YOUR IMPLEMENTATION
  * 
  * THE WHOLE PROJECT MUST COMPILE WITH: 
- * gcc -O2 -Wall -fomit-frame-pointer -msse2 -masm=intel testbench.c <YOUR IMPL>.c -o crackSHA1
+ * gcc -O2 -Wall -fomit-frame-pointer -msse2 -masm=intel testbench.c SHA-1_Team-04_1.c -o crackSHA1
  * 
  * ANY FURTHER INFORMATION CAN BE FOUND IN THE
  * PROBLEM DESCRIPTION
