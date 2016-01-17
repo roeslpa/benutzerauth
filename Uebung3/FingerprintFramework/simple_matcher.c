@@ -44,8 +44,6 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 int n = 1;
-//Array zu groß fuer den Stack. Hier anlegen, um es auf den Heapspeicher zu legen
-static int a[A_X][A_Y][thres_t];
 
 struct xyt_struct {
 	int nrows;
@@ -250,7 +248,7 @@ void test_multiple(char* probename, char* dirname, int hflag) {
  
  
 /** 
- * TODO: Implement the Generalised Hough Transform
+ * DONE: Implement the Generalised Hough Transform
  * 
  * The probe image, is the image you want to align, the gallery image to. 
  * Return the aligned gallery xyt_struct as the result of this function.
@@ -258,6 +256,7 @@ void test_multiple(char* probename, char* dirname, int hflag) {
 struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct galleryimage){
         int deltaT, deltaX, deltaY, arrayX, arrayY, arrayT, maximum, maxX, maxY, maxT;
         int i, j ,k;
+        static int a[A_X][A_Y][thres_t];
         
         maximum = maxX = maxY = maxT = 0;
         for(i = 0; i < A_X; i++) {
@@ -303,7 +302,7 @@ double getRad(int degree) {
 }
 
 /**
- * TODO: Implement the simple Minutiae Pairing Algorithm
+ * DONE: Implement the simple Minutiae Pairing Algorithm
  * Compare the gallery image to the probe image and return
  * the comparison score as an integer. 
  */
@@ -343,7 +342,7 @@ int getScore(struct  xyt_struct probe, struct xyt_struct galleryimage){
 
 
 /** 
- * TODO: Load minutiae from file (filepath is given as char *xyt_file) 
+ * DONE: Load minutiae from file (filepath is given as char *xyt_file) 
  * into the xyt_struct 'res' and return it as the result.
  *
  * Check for corrupted files, e.g. a line has less than 3, or more than 4
