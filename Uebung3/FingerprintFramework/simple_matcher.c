@@ -44,6 +44,8 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
 int n = 1;
+//Array zu groß fuer den Stack. Hier anlegen, um es auf den Heapspeicher zu legen
+static int a[A_X][A_Y][thres_t];
 
 struct xyt_struct {
 	int nrows;
@@ -254,23 +256,30 @@ void test_multiple(char* probename, char* dirname, int hflag) {
  * Return the aligned gallery xyt_struct as the result of this function.
  */
 struct  xyt_struct alignment(struct  xyt_struct probe, struct xyt_struct galleryimage){
-        int deltaT, deltaX, deltaY, i, j;
+        int deltaT, deltaX, deltaY, i, j, k;
         int arrayX, arrayY, arrayT, maximum, maxX, maxY, maxT;
-        static int a[A_X][A_Y][thres_t]; //static automatisch mit 0 initialisiert
         
         maximum = maxX = maxY = maxT = 0;
+        for(i = 0; i < A_X; i++) {
+            for(j = 0; j < A_Y; j++) {
+                for(k = 0; k < thres_t; k++) {
+                    a[i][j][k] = 0;
+                }
+            }
+        }
         
         for(i = 0; i < probe.nrows; i++) {
             for(j = 0; j < galleryimage.nrows; j++) {
-                deltaT = floor(getRad(probe.thetacol[i]) - getRad(galleryimage.thetacol[j]));
-                deltaX = floor(probe.xcol[i] - (galleryimage.xcol[j] * cos(deltaT)) - (galleryimage.ycol[j] * sin(deltaT)));
-                deltaY = floor(probe.ycol[i] - (galleryimage.ycol[j] * cos(deltaT)) + (galleryimage.xcol[j] * sin(deltaT)));
-                // Offest +9 fuer deltaT. deltaT bei Auswertung [-7, 4]
-                // Offset + fuer deltaX. deltaX bei Auswertung [-502, 824]
-                // Offset + fuer deltaX. deltaX bei Auswertung [-464, 950]
-                arrayX = floor(deltaX/10 + 200);
-                arrayY = floor(deltaY/10 + 200);
-                arrayT = floor(deltaT + 9);
+                deltaT = (int)floor(galleryimage.thetacol[j] - probe.thetacol[i]);
+                deltaX = (int)floor(galleryimage.xcol[j] - (probe.xcol[i] * cos(getRad(deltaT))) - (probe.ycol[i] * sin(getRad(deltaT))));
+                deltaY = (int)floor(galleryimage.ycol[j] - (probe.ycol[i] * cos(getRad(deltaT))) + (probe.xcol[i] * sin(getRad(deltaT))));
+                // a maximal 400 Eintraege fuer x. deltaX bei Auswertung [-495, 807]
+                // -> 1302 Eintraege theoretisch notwendig -> teilen durch 4 (binning) 
+                // Offset +150, um keine negativen Indizes zu erhalten
+                // Analog für deltaY [-481, 965] und getRad(deltaT) [-7, 6]
+                arrayX = (int)floor(deltaX/4) + 150;
+                arrayY = (int)floor(deltaY/3) + 170;
+                arrayT = (int)floor(getRad(deltaT)) + 9;
                 a[arrayX][arrayY][arrayT]++;
                 if(a[arrayX][arrayY][arrayT] > maximum) {
                     maximum = a[arrayX][arrayY][arrayT];
@@ -309,8 +318,8 @@ int getScore(struct  xyt_struct probe, struct xyt_struct galleryimage){
         
         for(i = 0; i < probe.nrows; i++) {
             for(j = 0; j < galleryimage.nrows; j++) {
-                spatialDistanceX = pow((probe.xcol[i] - galleryimage.xcol[j]), 2);
-                spatialDistanceY = pow((probe.ycol[i] - galleryimage.ycol[j]), 2);
+                spatialDistanceX = pow((galleryimage.xcol[j] - probe.xcol[i]), 2);
+                spatialDistanceY = pow((galleryimage.ycol[j] - probe.ycol[i]), 2);
                 spatialDistance = sqrt(spatialDistanceX + spatialDistanceY);
                 
                 directionDifference = MIN(fabs(galleryimage.thetacol - probe.thetacol), 
