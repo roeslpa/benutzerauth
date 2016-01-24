@@ -496,21 +496,21 @@ int crackHash(struct state hash, char *result) {
 
     // Early Exit A-->B-(<<)->C-->D-->E
     if((h4 + ((a << 30) | (a >> 2))) == hash.e) {
-        m[76] = ROL(m[73] ^ m[68] ^ m[62] ^ m[60]);
-        F2(f,b,c,d);
-        FF(a,b,c,d,e,f,k3,m[76]);
+        m4[76] = SIMDROL(XOR(XOR(XOR(m4[73]), m4[68]), m4[62]), m4[60]));
+        SIMDF2(f,b,c,d);
+        SIMDFF(a,b,c,d,e,f,k3,m4[76]);
         if((h3 + ((a << 30) | (a >> 2))) == hash.d) {
-            m[77] = ROL(m[74] ^ m[69] ^ m[63] ^ m[61]);
-            F2(f,b,c,d);
-            FF(a,b,c,d,e,f,k3,m[77]);
+            m4[77] = SIMDROL(XOR(XOR(XOR(m4[74]), m4[69]), m4[63]), m4[61]));
+            SIMDF2(f,b,c,d);
+            SIMDFF(a,b,c,d,e,f,k3,m4[77]);
             if((h2 + ((a << 30) | (a >> 2))) == hash.c) {
-                m[78] = ROL(m[75] ^ m[70] ^ m[64] ^ m[62]);
-                F2(f,b,c,d);
-                FF(a,b,c,d,e,f,k3,m[78]);
+                m4[78] = SIMDROL(XOR(XOR(XOR(m4[75]), m4[70]), m4[64]), m4[62]));
+                SIMDF2(f,b,c,d);
+                SIMDFF(a,b,c,d,e,f,k3,m4[78]);
                 if((h1 + a) == hash.b) {
-                    m[79] = ROL(m[76] ^ m[71] ^ m[65] ^ m[63]);
-                    F2(f,b,c,d);
-                    FF(a,b,c,d,e,f,k3,m[79]);
+                    m4[79] = SIMDROL(XOR(XOR(XOR(m4[76]), m4[71]), m4[65]), m4[63]));
+                    SIMDF2(f,b,c,d);
+                    SIMDFF(a,b,c,d,e,f,k3,m4[79]);
                     
                     if((h0 + a) == hash.a) {
                         result[0] = 'a'+l0;
