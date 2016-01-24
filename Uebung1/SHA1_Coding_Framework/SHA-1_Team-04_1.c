@@ -8,20 +8,22 @@
 #define F3(f,b,c,d) f = (b & c) | (d & (b | c))
 #define FF(a,b,c,d,e,f,k,m) temp = ((a << 5) | (a >> 27)) + f + e + k + m; e = d; d = c; c = ((b << 30) | (b >> 2)); b = a; a = temp;
 // SIMD Makros
+// Returns a 128bit vector: va1|va1|va1|va1
+#define SET1INT(va1) (_mm_set1_epi32(va1))
+// Returns a 128bit vector: va1|va2|va3|va4
+#define SET4INT(va1, va2, va3, va4) (_mm_set_epi32(va1, va2, va3, va4))
+
 #define OR(x,y) (_mm_or_si128(x,y))
 #define XOR(x,y) (_mm_xor_si128(x,y))
 #define AND(x,y) (_mm_and_si128(x,y))
 #define ADD(x,y) (_mm_add_epi32(x,y))
-#define SIMDROLX(m, x) OR(_mm_sll_epi32(m, x), _mm_srl_epi32(m, 32-x))
+#define SIMDROLX(m, x) OR(_mm_sll_epi32(m, SET1INT(x)), _mm_srl_epi32(m, SET1INT(32-x)))
 #define SIMDROL(m) SIMDROLX(m, 1)
 #define SIMDF1(f,b,c,d) f = XOR(d, AND(b, XOR(c,d)))
 #define SIMDF2(f,b,c,d) f = XOR(b, XOR(c,d))
 #define SIMDF3(f,b,c,d) f = OR(AND(b,c), AND(d, OR(b,c)))
 #define SIMDFF(a,b,c,d,e,f,k,m) temp = ADD(ADD(ADD(ADD(SIMDROLX(a, 5), f), e), k), m); e = d; d = c; c = SIMDROLX(b, 30); b = a; a = temp;
-// Returns a 128bit vector: va1|va1|va1|va1
-#define SET1INT(va1) (_mm_set1_epi32(va1))
-// Returns a 128bit vector: va1|va2|va3|va4
-#define SET4INT(va1, va2, va3, va4) (_mm_set_epi32(va1, va2, va3, va4))
+
 
 /**
  * THIS IS A TESTBENCH FOR SHA1 PASSWORD CRACKING
@@ -57,15 +59,16 @@ int crackHash(struct state hash, char *result) {
     const uint32_t k3 = 0xCA62C1D6;
     
     
-    uint32_t a, b, c, d, e, f, temp;
+    uint32_t a, b, c, d, e, f, temp, m00, m10, m20, m30;
     
     uint32_t m[80],pm[80],w[25];
+    __m128i m4[80],w4[25];
     // Startwerte setzen: m=aaaaaa, Hänge '1' an -> 10000000b = 0x80, 6 Buchstaben = 48 Bit, restliche Werte sind 0
     m[0] = 0x61616161;
     m[1] = 0x61618000;
     m[15] = 48;
     
-    unsigned l5,l4,l3,l2,l1,l0;
+    unsigned l5,l4,l3,l2,l1,l0,offset;
 
     // Iterationen, die m[1] betreffen
     for(l5=0; l5<26; l5++) {
@@ -129,16 +132,107 @@ int crackHash(struct state hash, char *result) {
             pm[75] = ROL(pm[72] ^ pm[67] ^ pm[61] ^ pm[59]);
 
             // Iterationen, die m[0] betreffen
+            offset = 0;
             for(l3=0; l3<26; l3++) {
                 m[0] = (m[0]& ~(0xff<<0))+((l3+'a')<<0);
                 for(l2=0; l2<26; l2++) {
                     m[0] = (m[0]& ~(0xff<<8))+((l2+'a')<<8);
                     for(l1=0; l1<26; l1++) {
-                        m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
-                        for(l0=0; l0<26; l0++) {
+                        if(offset == 0) {
+                            m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
+                        }
+                        for(l0=offset; l0<26; l0=l0+4) {
                             m[0] = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
+                            if(l0!=23) {
+                                m00 = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
+                                m10 = (m[0]& ~(0xff<<24))+((l0+'b')<<24);
+                                m20 = (m[0]& ~(0xff<<24))+((l0+'c')<<24);
+                                m30 = (m[0]& ~(0xff<<24))+((l0+'d')<<24);
+                                offset = 0;
+                            } else {
+                                m00 = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
+                                m10 = (m[0]& ~(0xff<<24))+((l0+'b')<<24);
+                                //Naechste Runde
+                                m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
+                                m20 = (m[0]& ~(0xff<<24))+((0+'a')<<24);
+                                m30 = (m[0]& ~(0xff<<24))+((0+'b')<<24);
+                                offset = 2;
+                            }
 
-    // Berechnung m[0] 1-20 mal rotiert
+    // SIMD Berechnung m[0] 1-20 mal rotiert
+    w4[1] = SET4INT(m00, m10, m20, m30);
+    w4[2] = SIMDROL(w4[1]);
+    w4[3] = SIMDROL(w4[2]);
+    w4[4] = SIMDROL(w4[3]);
+    w4[5] = SIMDROL(w4[4]);
+    w4[6] = SIMDROL(w4[5]);
+    w4[7] = SIMDROL(w4[6]);
+    w4[8] = SIMDROL(w4[7]);
+    w4[9] = SIMDROL(w4[8]);
+    w4[10] = SIMDROL(w4[9]);
+    w4[11] = SIMDROL(w4[10]);
+    w4[12] = SIMDROL(w4[11]);
+    w4[13] = SIMDROL(w4[12]);
+    w4[14] = SIMDROL(w4[13]);
+    w4[15] = SIMDROL(w4[14]);
+    w4[16] = SIMDROL(w4[15]);
+    w4[17] = SIMDROL(w4[16]);
+    w4[18] = SIMDROL(w4[17]);
+    w4[19] = SIMDROL(w4[18]);
+    w4[20] = SIMDROL(w4[19]);
+    // Vorberechnung mehrfach verwendeter Kombinationen: 6__4, 8__4, 8__12, 6__4__7
+    w4[21] = XOR(w4[6],w4[4]);
+    w4[22] = XOR(w4[8],w4[4]);
+    w4[23] = XOR(w4[8],w4[12]);
+    w4[24] = XOR(XOR(w4[6],w4[4]),w4[7]);
+    
+    m4[16] = w4[1];
+    m4[19] = w4[2];
+    m4[22] = w4[3];
+    m4[24] = XOR(SET1INT(384), w4[2]);
+    m4[25] = XOR(SET1INT(pm[25]), w4[4]);
+    m4[28] = XOR(SET1INT(pm[28]), w4[5]);
+    m4[30] = XOR(XOR(SET1INT(1536), w4[4]), w4[2]);
+    m4[31] = XOR(SET1INT(pm[31]), w4[6]);
+    m4[32] = XOR(XOR(SET1INT(pm[32]), w4[3]), w4[2]);
+    m4[34] = XOR(SET1INT(pm[34]), w4[7]);
+    m4[35] = XOR(SET1INT(pm[35]), w4[4]);
+    m4[36] = XOR(SET1INT(pm[36]), w4[21]);
+    m4[37] = XOR(SET1INT(pm[37]), w4[8]);
+    m4[38] = XOR(SET1INT(pm[38]), w4[4]);
+    m4[40] = XOR(XOR(SET1INT(pm[40]), w4[4]), w4[9]);
+    m4[42] = XOR(XOR(SET1INT(pm[42]), w4[6]), w4[8]);
+    m4[43] = XOR(SET1INT(pm[43]), w4[10]);
+    m4[44] = XOR(XOR(XOR(SET1INT(pm[44]), w4[6]), w4[3]), w4[7]);
+    m4[46] = XOR(XOR(SET1INT(pm[46]), w4[4]), w4[11]);
+    m4[47] = XOR(SET1INT(pm[47]), w4[22]);
+    m4[48] = XOR(XOR(XOR(XOR(SET1INT(pm[48]), w4[22]), w4[3]), w4[10]), w4[5]);
+    m4[49] = XOR(SET1INT(pm[49]), w4[12]);
+    m4[50] = XOR(SET1INT(pm[50]), w4[8]);
+    m4[51] = XOR(SET1INT(pm[51]), w4[21]);
+    m4[52] = XOR(XOR(SET1INT(pm[52]), w4[22]), w4[13]);
+    m4[54] = XOR(XOR(XOR(SET1INT(pm[54]), w4[7]), w4[10]), w4[12]);
+    m4[55] = XOR(SET1INT(pm[55]), w4[14]);
+    m4[56] = XOR(XOR(XOR(SET1INT(pm[56]), w4[24]), w4[11]), w4[10]);
+    m4[57] = XOR(SET1INT(pm[57]), w4[8]);
+    m4[58] = XOR(XOR(SET1INT(pm[58]), w4[22]), w4[15]);
+    m4[59] = XOR(SET1INT(pm[59]), w4[23]);
+    m4[60] = XOR(XOR(XOR(XOR(SET1INT(pm[60]), w4[23]), w4[4]), w4[7]), w4[14]);
+    m4[61] = XOR(SET1INT(pm[61]), w4[16]);
+    m4[62] = XOR(XOR(SET1INT(pm[62]), w4[21]), w4[23]);
+    m4[63] = XOR(SET1INT(pm[63]), w4[8]);
+    m4[64] = XOR(XOR(XOR(SET1INT(pm[64]), w4[24]), w4[23]), w4[17]);
+    m4[66] = XOR(XOR(SET1INT(pm[66]), w4[14]), w4[16]);
+    m4[67] = XOR(XOR(SET1INT(pm[67]), w4[8]), w4[18]);
+    m4[68] = XOR(XOR(XOR(SET1INT(pm[68]), w4[11]), w4[14]), w4[15]);
+    m4[70] = XOR(XOR(SET1INT(pm[70]), w4[12]), w4[19]);
+    m4[71] = XOR(XOR(SET1INT(pm[71]), w4[12]), w4[16]);
+    m4[72] = XOR(XOR(XOR(XOR(XOR(XOR(SET1INT(pm[72]), w4[11]), w4[12]), w4[18]), w4[13]), w4[16]), w4[5]);
+    m4[73] = XOR(SET1INT(pm[73]), w4[20]);
+    m4[74] = XOR(XOR(SET1INT(pm[74]), w4[8]), w4[16]);
+    m4[75] = XOR(XOR(XOR(SET1INT(pm[75]), w4[6]), w4[12]), w4[14]);
+
+    /* Non-SIMD Berechnung m[0] 1-20 mal rotiert
     w[1] = ROL(m[0]);
     w[2] = ROL(w[1]);
     w[3] = ROL(w[2]);
@@ -210,6 +304,7 @@ int crackHash(struct state hash, char *result) {
     m[73] = pm[73] ^ w[20];
     m[74] = pm[74] ^ w[8] ^ w[16];
     m[75] = pm[75] ^ w[6] ^ w[12] ^ w[14];
+    */
 
     /*
     Unroll der Funktionen mit bekannten Werten schrittweise (zero based und initial step):
