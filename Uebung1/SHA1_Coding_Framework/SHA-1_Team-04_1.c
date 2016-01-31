@@ -63,7 +63,7 @@ int crackHash(struct state hash, char *result) {
     
     uint32_t m[80],pm[80],w[25];
     __m128i m4[80],w4[25];
-    __m128i a, b, c, d, e, f, temp
+    __m128i a, b, c, d, e, f, temp, test;
     // Startwerte setzen: m=aaaaaa, Hänge '1' an -> 10000000b = 0x80, 6 Buchstaben = 48 Bit, restliche Werte sind 0
     m[0] = 0x61616161;
     m[1] = 0x61618000;
@@ -139,8 +139,11 @@ int crackHash(struct state hash, char *result) {
                 for(l2=0; l2<26; l2++) {
                     m[0] = (m[0]& ~(0xff<<8))+((l2+'a')<<8);
                     for(l1=0; l1<26; l1++) {
+                        //Falls schon zwei des Alphabets benutzt wurden, nicht den doppelten l++ nutzen, sonst einfach berechnen
                         if(offset == 0) {
                             m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
+                        } else {
+                            l1--;
                         }
                         for(l0=offset; l0<26; l0=l0+4) {
                             m[0] = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
@@ -153,7 +156,8 @@ int crackHash(struct state hash, char *result) {
                             } else {
                                 m00 = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
                                 m10 = (m[0]& ~(0xff<<24))+((l0+'b')<<24);
-                                //Naechste Runde
+                                //Schon fuer naechste "Alphabet" um vorherige 26 zu 28 auzufuellen
+                                l1++;
                                 m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
                                 m20 = (m[0]& ~(0xff<<24))+((0+'a')<<24);
                                 m30 = (m[0]& ~(0xff<<24))+((0+'b')<<24);
@@ -262,11 +266,11 @@ int crackHash(struct state hash, char *result) {
     FF(a,b,c,d,e,0xfbfbfefe,k0,m[1]);
     */
     
-    e = SET1INT(h2);
+    e = h2;
     c = SET1INT(0x59d148c0);
     d = SET1INT(0x7bf36ae2);
     b = ADD(SET1INT(0x9fb498b3), m4[0]);
-    a = ADD(ADD(ROLX(b,5), m4[1]), SET1INT(0x66b0cd0d));
+    a = ADD(ADD(SIMDROLX(b,5), m4[1]), SET1INT(0x66b0cd0d));
     // Weitere Vorberechnungen sind nicht sinnvoll, da Rechenkomplexitaet damit nicht abnimmt (m[0] bzw m[1] sind nun in a und b und fliessen dadurch in weitere Variablen ein)
     SIMDF1(f,b,c,d);
     SIMDFF(a,b,c,d,e,f,k0,SET1INT(0));
@@ -421,25 +425,78 @@ int crackHash(struct state hash, char *result) {
     SIMDFF(a,b,c,d,e,f,k3,m4[75]);
 
     // Early Exit A-->B-(<<)->C-->D-->E
-    if((h4 + ((a << 30) | (a >> 2))) == hash.e) {
-        m4[76] = SIMDROL(XOR(XOR(XOR(m4[73]), m4[68]), m4[62]), m4[60]));
+    test = ADD(h4,SIMDROLX(a,30));
+    if(((uint16_t*) &test)[0] == hash.e || ((uint16_t*) &test)[1] == hash.e || ((uint16_t*) &test)[2] == hash.e || ((uint16_t*) &test)[3] == hash.e) {
+    //if((h4 + ((a << 30) | (a >> 2))) == hash.e) {
+        m4[76] = SIMDROL(XOR(XOR(XOR(m4[73], m4[68]), m4[62]), m4[60]));
         SIMDF2(f,b,c,d);
         SIMDFF(a,b,c,d,e,f,k3,m4[76]);
-        if((h3 + ((a << 30) | (a >> 2))) == hash.d) {
-            m4[77] = SIMDROL(XOR(XOR(XOR(m4[74]), m4[69]), m4[63]), m4[61]));
+        
+        test = ADD(h3,SIMDROLX(a,30));
+        if(((uint16_t*) &test)[0] == hash.d || ((uint16_t*) &test)[1] == hash.d || ((uint16_t*) &test)[2] == hash.d || ((uint16_t*) &test)[3] == hash.d) {
+        //if((h3 + ((a << 30) | (a >> 2))) == hash.d) {
+            m4[77] = SIMDROL(XOR(XOR(XOR(m4[74], m4[69]), m4[63]), m4[61]));
             SIMDF2(f,b,c,d);
             SIMDFF(a,b,c,d,e,f,k3,m4[77]);
-            if((h2 + ((a << 30) | (a >> 2))) == hash.c) {
-                m4[78] = SIMDROL(XOR(XOR(XOR(m4[75]), m4[70]), m4[64]), m4[62]));
+            
+            test = ADD(h2,SIMDROLX(a,30));
+            if(((uint16_t*) &test)[0] == hash.c || ((uint16_t*) &test)[1] == hash.c || ((uint16_t*) &test)[2] == hash.c || ((uint16_t*) &test)[3] == hash.c) {
+            //if((h2 + ((a << 30) | (a >> 2))) == hash.c) {
+                m4[78] = SIMDROL(XOR(XOR(XOR(m4[75], m4[70]), m4[64]), m4[62]));
                 SIMDF2(f,b,c,d);
                 SIMDFF(a,b,c,d,e,f,k3,m4[78]);
-                if((h1 + a) == hash.b) {
-                    m4[79] = SIMDROL(XOR(XOR(XOR(m4[76]), m4[71]), m4[65]), m4[63]));
+                
+                test = ADD(h1,a);
+                if(((uint16_t*) &test)[0] == hash.b || ((uint16_t*) &test)[1] == hash.b || ((uint16_t*) &test)[2] == hash.b || ((uint16_t*) &test)[3] == hash.b) {
+                //if((h1 + a) == hash.b) {
+                    m4[79] = SIMDROL(XOR(XOR(XOR(m4[76], m4[71]), m4[65]), m4[63]));
                     SIMDF2(f,b,c,d);
                     SIMDFF(a,b,c,d,e,f,k3,m4[79]);
                     
-                    if((h0 + a) == hash.a) {
+                    test = ADD(h0,a);
+                    if(((uint16_t*) &test)[0] == hash.a) {
+                        if(offset == 0) {
+                            result[1] = 'a'+l1;
+                        } else {
+                            result[1] = 'a'+l1-1;
+                        }
                         result[0] = 'a'+l0;
+                        result[2] = 'a'+l2;
+                        result[3] = 'a'+l3;
+                        result[4] = 'a'+l4;
+                        result[5] = 'a'+l5;
+                        return(EXIT_SUCCESS);
+                    } else if(((uint16_t*) &test)[1] == hash.a) {
+                        if(offset == 0) {
+                            result[1] = 'a'+l1;
+                        } else {
+                            result[1] = 'a'+l1-1;
+                        }
+                        result[0] = 'b'+l0;
+                        result[2] = 'a'+l2;
+                        result[3] = 'a'+l3;
+                        result[4] = 'a'+l4;
+                        result[5] = 'a'+l5;
+                        return(EXIT_SUCCESS);
+                    } else if(((uint16_t*) &test)[2] == hash.a) {
+                        if(offset == 0) {
+                            result[0] = 'c'+l0;
+                        } else {
+                            result[0] = 'a'+l0;
+                        }
+                        result[1] = 'a'+l1;
+                        result[2] = 'a'+l2;
+                        result[3] = 'a'+l3;
+                        result[4] = 'a'+l4;
+                        result[5] = 'a'+l5;
+                        return(EXIT_SUCCESS);
+                    } else if(((uint16_t*) &test)[3] == hash.a) {
+                    //if((h0 + a) == hash.a) {
+                        if(offset == 0) {
+                            result[0] = 'd'+l0;
+                        } else {
+                            result[0] = 'b'+l0;
+                        }
                         result[1] = 'a'+l1;
                         result[2] = 'a'+l2;
                         result[3] = 'a'+l3;
