@@ -66,9 +66,10 @@ int crackHash(struct state hash, char *result) {
     
     uint32_t m00, m10, m20, m30;
     
-    uint32_t m[80],pm[80],w[25];
+    uint32_t m[80],pm[80];
     __m128i m4[80],w4[25];
-    __m128i a, b, c, d, e, f, temp, test;
+    __m128i a, b, c, d, e, f, temp;
+    vectors test;
     // Startwerte setzen: m=aaaaaa, Hänge '1' an -> 10000000b = 0x80, 6 Buchstaben = 48 Bit, restliche Werte sind 0
     m[0] = 0x61616161;
     m[1] = 0x61618000;
@@ -448,40 +449,37 @@ int crackHash(struct state hash, char *result) {
     SIMDFF(a,b,c,d,e,f,k3,m4[75]);
     
     // Early Exit A-->B-(<<)->C-->D-->E
-    test = ADD(h4,SIMDROLX(a,30));
+    test.v = ADD(h4,SIMDROLX(a,30));
 
-    //uint32_t hallo = _mm_extract_epi32(test, 0);
-    //printf("%x %x \n", hallo, ((uint32_t*) &test)[0]);
-
-    if(((uint32_t**) &test)[0] == hash.e || ((uint32_t**) &test)[1] == hash.e || ((uint32_t**) &test)[2] == hash.e || ((uint32_t**) &test)[3] == hash.e) {
+    if(test.a[0] == hash.e || test.a[1] == hash.e || test.a[2] == hash.e || test.a[3] == hash.e) {
     //if((h4 + ((a << 30) | (a >> 2))) == hash.e) {
         m4[76] = SIMDROL(XOR(XOR(XOR(m4[73], m4[68]), m4[62]), m4[60]));
         SIMDF2(f,b,c,d);
         SIMDFF(a,b,c,d,e,f,k3,m4[76]);
 
-        test = ADD(h3,SIMDROLX(a,30));
-        if(((uint32_t*) &test)[0] == hash.d || ((uint32_t*) &test)[1] == hash.d || ((uint32_t*) &test)[2] == hash.d || ((uint32_t*) &test)[3] == hash.d) {
+        test.v = ADD(h3,SIMDROLX(a,30));
+        if(test.a[0] == hash.d || test.a[1] == hash.d || test.a[2] == hash.d || test.a[3] == hash.d) {
         //if((h3 + ((a << 30) | (a >> 2))) == hash.d) {
             m4[77] = SIMDROL(XOR(XOR(XOR(m4[74], m4[69]), m4[63]), m4[61]));
             SIMDF2(f,b,c,d);
             SIMDFF(a,b,c,d,e,f,k3,m4[77]);
             
-            test = ADD(h2,SIMDROLX(a,30));
-            if(((uint32_t*) &test)[0] == hash.c || ((uint32_t*) &test)[1] == hash.c || ((uint32_t*) &test)[2] == hash.c || ((uint32_t*) &test)[3] == hash.c) {
+            test.v = ADD(h2,SIMDROLX(a,30));
+            if(test.a[0] == hash.c || test.a[1] == hash.c || test.a[2] == hash.c || test.a[3] == hash.c) {
             //if((h2 + ((a << 30) | (a >> 2))) == hash.c) {
                 m4[78] = SIMDROL(XOR(XOR(XOR(m4[75], m4[70]), m4[64]), m4[62]));
                 SIMDF2(f,b,c,d);
                 SIMDFF(a,b,c,d,e,f,k3,m4[78]);
                 
-                test = ADD(h1,a);
-                if(((uint32_t*) &test)[0] == hash.b || ((uint32_t*) &test)[1] == hash.b || ((uint32_t*) &test)[2] == hash.b || ((uint32_t*) &test)[3] == hash.b) {
+                test.v = ADD(h1,a);
+                if(test.a[0] == hash.b || test.a[1] == hash.b || test.a[2] == hash.b || test.a[3] == hash.b) {
                 //if((h1 + a) == hash.b) {
                     m4[79] = SIMDROL(XOR(XOR(XOR(m4[76], m4[71]), m4[65]), m4[63]));
                     SIMDF2(f,b,c,d);
                     SIMDFF(a,b,c,d,e,f,k3,m4[79]);
                     
-                    test = ADD(h0,a);
-                    if(((uint32_t*) &test)[0] == hash.a) {
+                    test.v = ADD(h0,a);
+                    if(test.a[0] == hash.a) {
                         if(offset == 0) {
                             result[0] = 'a'+l0;
                             result[1] = 'a'+l1;
@@ -495,7 +493,7 @@ int crackHash(struct state hash, char *result) {
                         result[4] = 'a'+l4;
                         result[5] = 'a'+l5;
                         return(EXIT_SUCCESS);
-                    } else if(((uint32_t*) &test)[1] == hash.a) {
+                    } else if(test.a[1] == hash.a) {
                         if(offset == 0) {
                             result[0] = 'b'+l0;
                             result[1] = 'a'+l1;
@@ -508,7 +506,7 @@ int crackHash(struct state hash, char *result) {
                         result[4] = 'a'+l4;
                         result[5] = 'a'+l5;
                         return(EXIT_SUCCESS);
-                    } else if(((uint32_t*) &test)[2] == hash.a) {
+                    } else if(test.a[2] == hash.a) {
                         if(offset == 0) {
                             result[0] = 'c'+l0;
                         } else {
@@ -520,7 +518,7 @@ int crackHash(struct state hash, char *result) {
                         result[4] = 'a'+l4;
                         result[5] = 'a'+l5;
                         return(EXIT_SUCCESS);
-                    } else if(((uint32_t*) &test)[3] == hash.a) {
+                    } else if(test.a[3] == hash.a) {
                     //if((h0 + a) == hash.a) {
                         if(offset == 0) {
                             result[0] = 'd'+l0;
