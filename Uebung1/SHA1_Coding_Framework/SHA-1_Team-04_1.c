@@ -48,6 +48,9 @@ typedef union
  * PROGRAMMAUFRUF MIT 
  * ./crackSHA1 3192ca69cc3b03f7e89df6a21ba69db6b980d7a6
  * ENTSPRECHENDES URBILD IST "gruppe"
+ *
+ * Team 04: Philipp Markert, Paul Rösler
+ *
  */
 
 int crackHash(struct state hash, char *result) {
