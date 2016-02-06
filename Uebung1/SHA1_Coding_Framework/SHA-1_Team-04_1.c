@@ -426,12 +426,12 @@ int crackHash(struct state hash, char *result) {
 
     // Early Exit A-->B-(<<)->C-->D-->E
     test = ADD(h4,SIMDROLX(a,30));
-    if(((int*) &test)[0] == hash.e || ((int*) &test)[1] == hash.e || ((int*) &test)[2] == hash.e || ((int*) &test)[3] == hash.e) {
+    if(((uint16_t*) &test)[0] == hash.e || ((uint16_t*) &test)[1] == hash.e || ((uint16_t*) &test)[2] == hash.e || ((uint16_t*) &test)[3] == hash.e) {
     //if((h4 + ((a << 30) | (a >> 2))) == hash.e) {
         m4[76] = SIMDROL(XOR(XOR(XOR(m4[73], m4[68]), m4[62]), m4[60]));
         SIMDF2(f,b,c,d);
         SIMDFF(a,b,c,d,e,f,k3,m4[76]);
-        printf("test");
+
         test = ADD(h3,SIMDROLX(a,30));
         if(((uint16_t*) &test)[0] == hash.d || ((uint16_t*) &test)[1] == hash.d || ((uint16_t*) &test)[2] == hash.d || ((uint16_t*) &test)[3] == hash.d) {
         //if((h3 + ((a << 30) | (a >> 2))) == hash.d) {
