@@ -473,6 +473,7 @@ int crackHash(struct state hash, char *result) {
                     
                     test.v = ADD(h0,a);
                     if(test.a[0] == hash.a) {
+                        //Abhaengig davon, ob a und b des naechsten mit berechnet wurden, das ergebnis "ausgeben"
                         if(offset == 0) {
                             result[0] = 'a'+l0;
                             result[1] = 'a'+l1;
