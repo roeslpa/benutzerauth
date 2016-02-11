@@ -80,6 +80,8 @@ int crackHash(struct state hash, char *result) {
     
     unsigned l5,l4,l3,l2,l1,l0,offset;
 
+    offset = 0;
+
     // Iterationen, die m[1] betreffen
     for(l5=0; l5<26; l5++) {
         m[1] = (m[1]& ~(0xff<<16))+((l5+'a')<<16);
@@ -154,23 +156,12 @@ int crackHash(struct state hash, char *result) {
             pm[75] = ROL(pm[72] ^ pm[67] ^ pm[61] ^ pm[59]);
 
             // Iterationen, die m[0] betreffen
-            offset = 0;
             for(l3=0; l3<26; l3++) {
                 m[0] = (m[0]& ~(0xff<<0))+((l3+'a')<<0);
                 for(l2=0; l2<26; l2++) {
                     m[0] = (m[0]& ~(0xff<<8))+((l2+'a')<<8);
                     for(l1=0; l1<26; l1++) {
-                        //Falls schon zwei des Alphabets benutzt wurden, nicht (l++)++ nutzen, sonst einfach berechnen
-                        if(offset == 0) {
-                            m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
-                        } else {
-                            //Wenn zu 'z' gesprungen wurde, nicht 'a'-1 sondern 'z' benutzen
-                            if(l1 == 0) {
-                                l1 = 25;
-                            } else {
-                                l1--;
-                            }
-                        }
+                        m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
                         for(l0=offset; l0<26; l0=l0+4) {
                             m[0] = (m[0]& ~(0xff<<24))+((l0+'a')<<24);
                             //Falls diese Runde noch voll wird (l0=22 danach +4=26) erstes, sonst schon für nächste Runde vorberechnen
@@ -184,8 +175,7 @@ int crackHash(struct state hash, char *result) {
                                 m00 = (m[0]& ~(0xff<<24))+(('y')<<24);
                                 m10 = (m[0]& ~(0xff<<24))+(('z')<<24);
                                 //Schon fuer naechste "Alphabet" um vorherige 26 zu 28 auzufuellen
-                                l1++;
-                                m[0] = (m[0]& ~(0xff<<16))+((l1+'a')<<16);
+                                m[0] = (m[0]& ~(0xff<<16))+((l1+1+'a')<<16);
                                 m20 = (m[0]& ~(0xff<<24))+(('a')<<24);
                                 m30 = (m[0]& ~(0xff<<24))+(('b')<<24);
                                 offset = 2;
@@ -488,7 +478,7 @@ int crackHash(struct state hash, char *result) {
                             result[1] = 'a'+l1;
                         } else {
                             result[0] = 'y';
-                            result[1] = 'a'+l1-1;
+                            result[1] = 'a'+l1;
                         }
                         
                         result[2] = 'a'+l2;
@@ -502,7 +492,7 @@ int crackHash(struct state hash, char *result) {
                             result[1] = 'a'+l1;
                         } else {
                             result[0] = 'z';
-                            result[1] = 'a'+l1-1;
+                            result[1] = 'a'+l1;
                         }
                         result[2] = 'a'+l2;
                         result[3] = 'a'+l3;
@@ -512,8 +502,10 @@ int crackHash(struct state hash, char *result) {
                     } else if(test.a[2] == hash.a) {
                         if(offset == 0) {
                             result[0] = 'c'+l0;
+                            result[1] = 'a'+l1;
                         } else {
                             result[0] = 'a';
+                            result[1] = 'a'+l1+1;
                         }
                         result[1] = 'a'+l1;
                         result[2] = 'a'+l2;
@@ -525,8 +517,10 @@ int crackHash(struct state hash, char *result) {
                     //if((h0 + a) == hash.a) {
                         if(offset == 0) {
                             result[0] = 'd'+l0;
+                            result[1] = 'a'+l1;
                         } else {
                             result[0] = 'b';
+                            result[1] = 'a'+l1+1;
                         }
                         result[1] = 'a'+l1;
                         result[2] = 'a'+l2;
